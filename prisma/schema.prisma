@@ -1,0 +1,100 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Ingredient {
+  id       String  @id @default(auto()) @map("_id") @db.ObjectId
+  name     String
+  quantity Float
+  recipeId String? @db.ObjectId
+  unit     String
+  Recipe   Recipe? @relation(fields: [recipeId], references: [id])
+}
+
+model Instruction {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  description String
+  recipeId    String? @db.ObjectId
+  subtitle    String
+  title       String
+  Recipe      Recipe? @relation(fields: [recipeId], references: [id])
+}
+
+model Nutrient {
+  id           String  @id @default(auto()) @map("_id") @db.ObjectId
+  calories     Float
+  carbohydrate Float
+  fat          Float
+  protein      Float
+  recipeId     String? @db.ObjectId
+  Recipe       Recipe? @relation(fields: [recipeId], references: [id])
+}
+
+model Recipe {
+  id           String        @id @default(auto()) @map("_id") @db.ObjectId
+  categories   String[]
+  cookTime     String
+  description  String
+  imageUrl     String
+  lastUpdate   DateTime      @db.Date
+  name         String
+  prepTime     String
+  serving      String
+  nutrients    Nutrient[]
+  instructions Instruction[]
+  ingredients  Ingredient[]
+  userId       String        @db.ObjectId
+  User         User          @relation(fields: [userId], references: [id])
+  Transaction  Transaction[]
+}
+
+model User {
+  id           String        @id @default(auto()) @map("_id") @db.ObjectId
+  auth0Id      String        @unique
+  email        String        @unique
+  name         String?
+  recipes      Recipe[]
+  transactions Transaction[]
+  wallet       Wallet?       @relation(fields: [walletId], references: [id])
+  walletId     String?       @db.ObjectId
+}
+
+model Wallet {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  userId  String @unique @db.ObjectId
+  balance Float  @default(0.0)
+  User    User[]
+}
+
+model Transaction {
+  id              String          @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String          @db.ObjectId
+  user            User            @relation(fields: [userId], references: [id])
+  recipeId        String?         @db.ObjectId
+  recipe          Recipe?         @relation(fields: [recipeId], references: [id])
+  status          String
+  method          String
+  amount          Float
+  currency        String
+  transactionType TransactionType
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+enum TransactionType {
+  PURCHASE
+  DEPOSIT
+  WITHDRAWAL
+  SALE
+}
