@@ -15,6 +15,9 @@ export const createMyRecipeValidator = validation(getSchema => ({
         serving: yup.number(),
         imageUrl: yup.string(),
         categories: yup.array().of(yup.string()),
+        isPublic: yup.boolean(),
+        forSale: yup.boolean(),
+        price: yup.number(),
         nutrients: yup.array().of(yup.object({
             calories: yup.number(),
             fat: yup.number(),
