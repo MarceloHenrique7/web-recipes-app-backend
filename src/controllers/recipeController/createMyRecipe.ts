@@ -58,46 +58,46 @@ export const createMyRecipe = async (req: Request, res: Response) => {
             price
         } = req.body;
         
-        const parsedNutrients = JSON.parse(JSON.stringify(nutrients))
-        const parsedIngredients = JSON.parse(JSON.stringify(ingredients))
-        const parsedInsctructions = JSON.parse(JSON.stringify(instructions))
-        const forSaleBool = forSale.toLowerCase() == 'true'
-        const isPublicBool = isPublic.toLowerCase() == 'true'
+        const parsedNutrients = JSON.parse(JSON.stringify(nutrients));
+        const parsedIngredients = JSON.parse(JSON.stringify(ingredients));
+        const parsedInstructions = JSON.parse(JSON.stringify(instructions));
+        const forSaleBool = forSale.toLowerCase() === 'true';
+        const isPublicBool = isPublic.toLowerCase() === 'true';
+
         const recipe = await prisma.recipe.create({
             data: {
                 name,
                 description,
-                prepTime,
-                cookTime,
-                serving,
-                categories,
+                prepTime: prepTime,
+                cookTime: cookTime,
+                serving: serving,
+                categories: categories.split(','),
                 nutrients: {
                     create: parsedNutrients.map((nutrient: any) => ({
                         calories: parseFloat(nutrient.calories),
                         fat: parseFloat(nutrient.fat),
                         protein: parseFloat(nutrient.protein),
                         carbohydrate: parseFloat(nutrient.carbohydrate),
-                        
-                    }))
+                    })),
                 },
                 ingredients: {
                     create: parsedIngredients.map((ingredient: any) => ({
                         name: ingredient.name,
                         quantity: parseFloat(ingredient.quantity),
                         unit: ingredient.unit,
-                    }))
+                    })),
                 },
                 instructions: {
-                    create: parsedInsctructions.map((instruction: any) => ({
+                    create: parsedInstructions.map((instruction: any) => ({
                         title: instruction.title,
                         subtitle: instruction.subtitle,
-                        description: instruction.description
-                    }))
+                        description: instruction.description,
+                    })),
                 },
                 imageUrl: imageUrl as string,
                 userId: new mongoose.Types.ObjectId(userId).toString(),
                 lastUpdate: new Date(),
-                isPublic: isPublicBool as boolean,
+                isPublic: isPublicBool,
                 forSale: forSaleBool,
                 price: parseFloat(price) || 0.0,
             },
@@ -113,9 +113,8 @@ export const createMyRecipe = async (req: Request, res: Response) => {
 };
 
 const uploadImage = async (file: Express.Multer.File) => {
-    const image = file
-    const base64Image = Buffer.from(image.buffer).toString("base64");
-    const dataURI = `data:${image.mimetype};base64,${base64Image}`;
+    const base64Image = Buffer.from(file.buffer).toString("base64");
+    const dataURI = `data:${file.mimetype};base64,${base64Image}`;
     const uploadResponse = await cloudinary.v2.uploader.upload(dataURI);
-    return uploadResponse.url
-}
+    return uploadResponse.url;
+};
