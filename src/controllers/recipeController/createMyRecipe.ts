@@ -5,6 +5,7 @@ import cloudinary from "cloudinary";
 import mongoose from "mongoose";
 import { StatusCodes } from "http-status-codes";
 import { prisma } from '../../index';
+import { Prisma } from "@prisma/client";
 
 export const createMyRecipeValidator = validation(getSchema => ({
     body: getSchema(yup.object().shape({
@@ -65,44 +66,49 @@ export const createMyRecipe = async (req: Request, res: Response) => {
         const parsedInsctructions = JSON.parse(JSON.stringify(instructions))
         const forSaleBool = forSale.toLowerCase() == 'true'
         const isPublicBool = isPublic.toLowerCase() == 'true'
-        const recipe = await prisma.recipe.create({
-            data: {
-                name,
-                description,
-                prepTime,
-                cookTime,
-                serving,
-                categories,
-                nutrients: {
-                    create: parsedNutrients.map((nutrient: any) => ({
-                        calories: parseFloat(nutrient.calories),
-                        fat: parseFloat(nutrient.fat),
-                        protein: parseFloat(nutrient.protein),
-                        carbohydrate: parseFloat(nutrient.carbohydrate),
-                        
-                    }))
-                },
-                ingredients: {
-                    create: parsedIngredients.map((ingredient: any) => ({
-                        name: ingredient.name,
-                        quantity: parseFloat(ingredient.quantity),
-                        unit: ingredient.unit,
-                    }))
-                },
-                instructions: {
-                    create: parsedInsctructions.map((instruction: any) => ({
-                        title: instruction.title,
-                        subtitle: instruction.subtitle,
-                        description: instruction.description
-                    }))
-                },
-                imageUrl: imageUrl as string,
-                userId: new mongoose.Types.ObjectId(userId).toString(),
-                lastUpdate: new Date(),
-                isPublic: isPublicBool || false,
-                forSale: forSaleBool,
-                price: parseFloat(price) || 0.0,
+
+
+        const newRecipe: Prisma.RecipeUncheckedCreateInput = {
+            name,
+            description,
+            prepTime,
+            cookTime,
+            serving,
+            categories,
+            nutrients: {
+                create: parsedNutrients.map((nutrient: any) => ({
+                    calories: parseFloat(nutrient.calories),
+                    fat: parseFloat(nutrient.fat),
+                    protein: parseFloat(nutrient.protein),
+                    carbohydrate: parseFloat(nutrient.carbohydrate),
+                    
+                }))
             },
+            ingredients: {
+                create: parsedIngredients.map((ingredient: any) => ({
+                    name: ingredient.name,
+                    quantity: parseFloat(ingredient.quantity),
+                    unit: ingredient.unit,
+                }))
+            },
+            instructions: {
+                create: parsedInsctructions.map((instruction: any) => ({
+                    title: instruction.title,
+                    subtitle: instruction.subtitle,
+                    description: instruction.description
+                }))
+            },
+            imageUrl: imageUrl as string,
+            userId: new mongoose.Types.ObjectId(userId).toString(),
+            lastUpdate: new Date(),
+            isPublic: isPublicBool,
+            forSale: forSaleBool,
+            price: parseFloat(price) || 0.0,
+        }
+
+        
+        const recipe = await prisma.recipe.create({
+            data: newRecipe,
         });
 
         res.status(StatusCodes.CREATED).send(recipe);
