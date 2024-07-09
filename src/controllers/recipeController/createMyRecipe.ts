@@ -97,7 +97,7 @@ export const createMyRecipe = async (req: Request, res: Response) => {
                 imageUrl: imageUrl as string,
                 userId: new mongoose.Types.ObjectId(userId).toString(),
                 lastUpdate: new Date(),
-                isPublic: isPublicBool || false,
+                isPublic: isPublicBool as boolean,
                 forSale: forSaleBool,
                 price: parseFloat(price) || 0.0,
             },
