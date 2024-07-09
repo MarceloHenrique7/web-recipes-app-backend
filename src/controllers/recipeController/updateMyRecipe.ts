@@ -72,7 +72,6 @@ export const updateMyRecipe = async (req: Request, res: Response) => {
         const parsedInsctructions = JSON.parse(JSON.stringify(instructions))
         const forSaleBool = forSale.toLowerCase() == 'true' ? true : false
         const isPublicBool = isPublic.toLowerCase() == 'true' ? true : false
-
         console.log("For sale", forSale)
         console.log("isPublic", isPublic)
 
@@ -89,7 +88,7 @@ export const updateMyRecipe = async (req: Request, res: Response) => {
                 categories: req.body.categories,
                 forSale: forSaleBool,
                 isPublic: isPublicBool,
-                price: parseFloat(price),
+                price: forSaleBool ? parseFloat(price) : 0.0,
                 nutrients: {
                     deleteMany: {},
                     create: parsedNutrients.map((nutrient: any) => ({
