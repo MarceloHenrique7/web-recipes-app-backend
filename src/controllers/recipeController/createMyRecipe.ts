@@ -49,21 +49,17 @@ export const createMyRecipe = async (req: Request, res: Response) => {
             nutrients,
             ingredients,
             instructions,
-            userId
+            userId,
+            forSale,
+            isPublic,
+            price
         } = req.body;
-
-        console.log(req.body)
-
+        
         const parsedNutrients = JSON.parse(JSON.stringify(nutrients))
         const parsedIngredients = JSON.parse(JSON.stringify(ingredients))
         const parsedInsctructions = JSON.parse(JSON.stringify(instructions))
-
-        console.log("--------------------------------------------------------------------------")
-      
-        console.log(parsedNutrients)
-        console.log(parsedIngredients)
-        console.log(parsedInsctructions)
-
+        const forSaleBool = forSale.toLowerCase() == 'true'
+        const isPublicBool = isPublic.toLowerCase() == 'true'
         const recipe = await prisma.recipe.create({
             data: {
                 name,
@@ -97,7 +93,10 @@ export const createMyRecipe = async (req: Request, res: Response) => {
                 },
                 imageUrl: imageUrl as string,
                 userId: new mongoose.Types.ObjectId(userId).toString(),
-                lastUpdate: new Date()
+                lastUpdate: new Date(),
+                isPublic: isPublicBool,
+                forSale: forSaleBool,
+                price: parseFloat(price) || 0.0,
             },
         });
 

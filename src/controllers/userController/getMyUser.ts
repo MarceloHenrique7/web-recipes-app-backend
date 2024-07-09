@@ -4,21 +4,31 @@ import { prisma } from '../../index';
 
 export const getMyUser = async (req: Request, res: Response) => {
     try {
+        let user;
 
         if (req.body.authId) {
-            const user = prisma.user.findUnique({ where: { auth0Id: req.body.authId }, include: { wallet: true } })
+            user = await prisma.user.findUnique({
+                where: { auth0Id: req.body.authId },
+                include: { wallet: true}
+            });
 
             if (user) {
-                return res.status(StatusCodes.OK).json(user)
+                return res.status(StatusCodes.OK).json(user);
             }
-            return res.status(StatusCodes.NOT_FOUND).json({ message: "Unable to Get a user" })
+            return res.status(StatusCodes.NOT_FOUND).json({ message: "Unable to Get a user" });
         }
 
-        const currentUser = await prisma.user.findUnique({ where: { id: req.body.userId }, include: { wallet: true }})
- 
-        res.status(StatusCodes.OK).json(currentUser)
+        user = await prisma.user.findUnique({
+            where: { id: req.body.userId },
+            include: { wallet: true }
+        });
+
+        if (user) {
+            return res.status(StatusCodes.OK).json(user);
+        }
+        return res.status(StatusCodes.NOT_FOUND).json({ message: "Unable to Get a user" });
     } catch (error) {
-        console.log(error)
-        res.status(500).json({ message: "Unable to Get a user" })
+        console.error("Error fetching user:", error); // Mensagem de depuração
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "Unable to Get a user" });
     }
-}
+};

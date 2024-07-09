@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import myUserRoute from './routes/MyUserRoute'
 import myRecipeRoute from './routes/MyRecipeRoute'
 import RecipeRoute from './routes/RecipeRoute'
+import TransactionRoute from './routes/TransactionRoute'
 import cors from 'cors'
 import mongoose from 'mongoose';
 import { v2 as cloudinary } from 'cloudinary';
@@ -13,8 +14,14 @@ const app = express();
 
 app.use(bodyParser.json())
 app.use(cors())
-app.use(express.json())
 
+app.use("/api/transaction/checkout/webhook", express.raw({ type: "*/*" }))
+app.use(express.json())
+app.use("/", RecipeRoute)
+app.use("/api/recipe/search", RecipeRoute)
+app.use("/api/my/user", myUserRoute)
+app.use("/api/my/recipe", myRecipeRoute)
+app.use("/api/transaction", TransactionRoute)
 
 export const prisma = new PrismaClient();
 
@@ -32,11 +39,6 @@ cloudinary.config({
 app.get("/health", (req: Request, res: Response) => {
     res.send("Health Ok!")
 })
-
-app.use("/", RecipeRoute)
-app.use("/api/recipe/search", RecipeRoute)
-app.use("/api/my/user", myUserRoute)
-app.use("/api/my/recipe", myRecipeRoute)
 
 mongoose.connect(CONNECT_URL_STRING as string)
 .then(() => {

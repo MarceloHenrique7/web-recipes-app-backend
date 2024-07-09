@@ -57,6 +57,9 @@ model Recipe {
   userId       String        @db.ObjectId
   User         User          @relation(fields: [userId], references: [id])
   Transaction  Transaction[]
+  isPublic     Boolean
+  forSale      Boolean
+  price        Float?
 }
 
 model User {

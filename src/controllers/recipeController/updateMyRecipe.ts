@@ -58,11 +58,20 @@ export const updateMyRecipe = async (req: Request, res: Response) => {
             nutrients,
             ingredients,
             instructions,
+            price,
+            forSale,
+            isPublic
         } = req.body;
 
+        
         const parsedNutrients = JSON.parse(JSON.stringify(nutrients))
         const parsedIngredients = JSON.parse(JSON.stringify(ingredients))
         const parsedInsctructions = JSON.parse(JSON.stringify(instructions))
+        const forSaleBool = forSale.toLowerCase() == 'true' ? true : false
+        const isPublicBool = isPublic.toLowerCase() == 'true' ? true : false
+
+        console.log("For sale", forSale)
+        console.log("isPublic", isPublic)
 
         await prisma.recipe.update({
             where: {
@@ -75,6 +84,9 @@ export const updateMyRecipe = async (req: Request, res: Response) => {
                 cookTime: req.body.cookTime,
                 serving: req.body.serving,
                 categories: req.body.categories,
+                forSale: forSaleBool,
+                isPublic: isPublicBool,
+                price: parseFloat(price),
                 nutrients: {
                     deleteMany: {},
                     create: parsedNutrients.map((nutrient: any) => ({
