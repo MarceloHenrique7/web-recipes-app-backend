@@ -21,8 +21,6 @@ router.get('/',
 )
 
 router.get('/:id',
-    jwtCheck,
-    jwtParse,
     MyRecipeController.getMyRecipe)
     
 router.post('/',

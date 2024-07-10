@@ -20,6 +20,7 @@ export const getMyRecipe = async (req: Request, res: Response) => {
         if(!recipe) {
             return res.status(StatusCodes.NOT_FOUND).json({ message: "recipe not found" })
         }
+        console.log(recipe)
 
         res.json(recipe)
     } catch (error) {
