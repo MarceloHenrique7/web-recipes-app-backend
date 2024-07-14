@@ -12,7 +12,13 @@ dotenv.config();
 import { PrismaClient } from '@prisma/client';
 const app = express();
 
-app.use(cors())
+
+const corsOptions = {
+    origin: 'https://web-app-recipes-frontend.onrender.com',
+    optionsSuccessStatus: 200,
+  };
+
+app.use(cors(corsOptions))
 
 app.use(bodyParser.raw({ type: 'application/json' }))
 app.use(express.json())
