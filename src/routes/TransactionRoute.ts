@@ -15,6 +15,6 @@ router.post("/create/wallet", jwtCheck, jwtParse, createTransationWallet)
 
 // O usuário optou pela opção de pagamento pelo cartão
 router.post("/checkout/create-checkout-session", jwtCheck, jwtParse, stripeController.createCheckoutSession)
-router.post("/checkout/webhook", stripeController.stripeWebHookHandler)
+router.post("/checkout/webhook", express.raw({ type: 'application/json' }), stripeController.stripeWebHookHandler)
 
 export default router;

@@ -10,6 +10,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL as string
 const STRIPE_ENDPOINT_SECRET = process.env.STRIPE_WEBHOOK_SECRET as string
 
 
+
 export const getMyTransaction = async (req: Request, res: Response) => {
 
     try {
@@ -29,9 +30,6 @@ export const getMyTransaction = async (req: Request, res: Response) => {
 
 }
 
-
-
-
 type CheckoutSessionRequest = {
     transactionType: string;
     currency: string;
@@ -41,35 +39,42 @@ type CheckoutSessionRequest = {
     recipeId: string
 }
 
-
 const stripeWebHookHandler = async (req: Request, res: Response) => {
     let event;
 
-    try {
-        const sig = req.headers["stripe-signature"];
-
-        event = STRIPE.webhooks.constructEvent(req.body, sig as string, STRIPE_ENDPOINT_SECRET as string)
-
-    } catch (error: any) {
-        console.log(error)
-        return res.status(400).send(`Webhook erro: ${error.message}` )
-    }
-
-    if (event.type === "checkout.session.completed") {
-        
-        const transaction = await prisma.transaction.findUnique({ where: { id: event.data.object.metadata?.recipeId } })
-        
-
-        if (!transaction) {
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "Transaction not Found" })
+    if (STRIPE_ENDPOINT_SECRET) {
+        try {
+            const sig = req.headers["stripe-signature"] as string;
+            
+            event = STRIPE.webhooks.constructEvent(req.body, sig, STRIPE_ENDPOINT_SECRET)
+    
+        } catch (error: any) {
+            console.log(error)
+            return res.status(400).send(`Webhook erro: ${error.message}` )
         }
 
-        transaction.amount = event.data.object.amount_total as number
-        
-        transaction.status = "paid"
+        if (event.type === "checkout.session.completed") {
+            const session = event.data.object as Stripe.Checkout.Session;
+            const transaction = await prisma.transaction.findUnique({ where: { id: event.data.object.metadata?.recipeId } })
+            
+    
+            if (!transaction) {
+                return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "Transaction not Found" })
+            }
+    
+            await prisma.transaction.update({
+                where: { id: transaction.id },
+                data: {
+                    amount: session.amount_total as number,
+                    status: "paid"
+                }
+            })
+    
+        }
+    
+        res.status(StatusCodes.OK).send()
     }
 
-    res.status(StatusCodes.OK).send()
 
 }
 
@@ -92,7 +97,7 @@ const createCheckoutSession = async (req: Request, res: Response) => {
                 recipeId: checkoutSessionRequest.recipeId,
                 amount: checkoutSessionRequest.amount,
                 method: checkoutSessionRequest.method,
-                status: "placed",
+                status: "success",
                 currency: "usd",
                 transactionType: "PURCHASE"
             }
@@ -154,12 +159,10 @@ const createSession = async (checkoutSessionRequest: CheckoutSessionRequest, rec
             recipeId,
             transactionId
         },
-        success_url: `${FRONTEND_URL}/transaction-status?success=true`,
+        success_url: `${FRONTEND_URL}/transaction-status/${recipe.id}?success=true`,
         cancel_url: `${FRONTEND_URL}/details/${recipeId}?cancel=true`
     })
-
     return sessionData;
-
 }
 
 

@@ -12,11 +12,11 @@ dotenv.config();
 import { PrismaClient } from '@prisma/client';
 const app = express();
 
-app.use(bodyParser.json())
 app.use(cors())
 
-app.use("/api/transaction/checkout/webhook", express.raw({ type: "*/*" }))
+app.use(bodyParser.json())
 app.use(express.json())
+
 app.use("/", RecipeRoute)
 app.use("/api/recipe/search", RecipeRoute)
 app.use("/api/my/user", myUserRoute)
@@ -24,8 +24,6 @@ app.use("/api/my/recipe", myRecipeRoute)
 app.use("/api/transaction", TransactionRoute)
 
 export const prisma = new PrismaClient();
-
-
 
 const PORT = 8080;
 const CONNECT_URL_STRING = process.env.CONNECT_URL_STRING
