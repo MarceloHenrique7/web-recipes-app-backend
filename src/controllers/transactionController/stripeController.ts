@@ -55,9 +55,14 @@ const stripeWebHookHandler = async (req: Request, res: Response) => {
 
         if (event.type === "checkout.session.completed") {
             const session = event.data.object as Stripe.Checkout.Session;
-            const transaction = await prisma.transaction.findUnique({ where: { id: event.data.object.metadata?.recipeId } })
             
-    
+            const recipeId = event.data.object.metadata?.recipeId;
+            if (!recipeId) {
+                console.log("Nao foi possivel obter o recipeId")
+                return res.status(StatusCodes.BAD_REQUEST).json({ message: "RecipeId not found in metadata" });
+            }
+
+            const transaction = await prisma.transaction.findFirst({ where:  {recipeId: recipeId} })
             if (!transaction) {
                 return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "Transaction not Found" })
             }
@@ -91,7 +96,7 @@ const createCheckoutSession = async (req: Request, res: Response) => {
 
 
 
-        await prisma.transaction.create({
+        const transaction = await prisma.transaction.create({
             data: {
                 userId: checkoutSessionRequest.userId,
                 recipeId: checkoutSessionRequest.recipeId,
@@ -103,7 +108,7 @@ const createCheckoutSession = async (req: Request, res: Response) => {
             }
         })
 
-        const session = await createSession(checkoutSessionRequest, recipe.id, checkoutSessionRequest.userId)
+        const session = await createSession(checkoutSessionRequest, recipe.id, transaction.id)
 
         if (!session) {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json( { message: "Error creating stripe section" } )
@@ -121,6 +126,8 @@ const createCheckoutSession = async (req: Request, res: Response) => {
 
 const createSession = async (checkoutSessionRequest: CheckoutSessionRequest, recipeId: string, transactionId: string, ) => {
     const recipe = await prisma.recipe.findUnique({ where: { id: recipeId } })
+
+    console.log("Passando para o metadata", recipeId, transactionId)
 
     if (!recipe) {
         throw new Error("Recipe not found")

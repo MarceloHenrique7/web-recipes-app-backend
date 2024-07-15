@@ -1,11 +1,10 @@
-import express, { Router } from "express";
+import { Router } from "express";
 
 
 import { jwtCheck, jwtParse } from "../middleware/auth";
 import { createTransationWallet } from "../controllers/transactionController/createTransactionWallet";
 import { getTransactionsWallet } from "../controllers/transactionController/getTransactionsWallet";
 import stripeController from "../controllers/transactionController/stripeController";
-import bodyParser from "body-parser";
 
 
 const router = Router();
@@ -16,6 +15,6 @@ router.post("/create/wallet", jwtCheck, jwtParse, createTransationWallet)
 
 // O usuário optou pela opção de pagamento pelo cartão
 router.post("/checkout/create-checkout-session", jwtCheck, jwtParse, stripeController.createCheckoutSession)
-router.post("/checkout/webhook", bodyParser.raw({ type: 'application/json' }), stripeController.stripeWebHookHandler)
+router.post("/checkout/webhook", stripeController.stripeWebHookHandler)
 
 export default router;
