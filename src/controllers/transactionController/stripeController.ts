@@ -86,9 +86,16 @@ const stripeWebHookHandler = async (req: Request, res: Response) => {
 const createCheckoutSession = async (req: Request, res: Response) => {
 
     try {
-        const checkoutSessionRequest: CheckoutSessionRequest = req.body;
+        const checkoutSessionRequest: Buffer = req.body;
 
-        const recipe = await prisma.recipe.findUnique({ where: { id: checkoutSessionRequest.recipeId } })
+        const checkoutSessionRequestString = checkoutSessionRequest.toString('utf8')
+
+        const checkoutSessionRequestJson = JSON.parse(checkoutSessionRequestString)
+        
+        console.log(checkoutSessionRequestJson)
+
+
+        const recipe = await prisma.recipe.findUnique({ where: { id: checkoutSessionRequestJson?.recipeId } })
 
         if (!recipe) {
             throw new Error('Recipe not Found')
@@ -98,17 +105,17 @@ const createCheckoutSession = async (req: Request, res: Response) => {
 
         const transaction = await prisma.transaction.create({
             data: {
-                userId: checkoutSessionRequest.userId,
-                recipeId: checkoutSessionRequest.recipeId,
-                amount: checkoutSessionRequest.amount,
-                method: checkoutSessionRequest.method,
+                userId: req.body.userId,
+                recipeId: recipe.id,
+                amount: checkoutSessionRequestJson.amount,
+                method: checkoutSessionRequestJson.method,
                 status: "success",
                 currency: "usd",
                 transactionType: "PURCHASE"
             }
         })
 
-        const session = await createSession(checkoutSessionRequest, recipe.id, transaction.id)
+        const session = await createSession(checkoutSessionRequestJson, recipe.id, transaction.id)
 
         if (!session) {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json( { message: "Error creating stripe section" } )
@@ -118,7 +125,7 @@ const createCheckoutSession = async (req: Request, res: Response) => {
 
     } catch (error: any) {
         console.log(error)
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({message: error.raw.message} )
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({message: error} )
     }
 
 }
