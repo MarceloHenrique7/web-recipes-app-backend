@@ -118,7 +118,6 @@ const createCheckoutSession = async (req: Request, res: Response) => {
             }
         })
 
-        console.log("createCheckoutSession ---->>>" + recipe.id, transaction.id)
         const session = await createSession(checkoutSessionRequest, recipe.id, transaction.id)
 
         if (!session) {

@@ -64,7 +64,7 @@ export const createTransationWallet = async (req: Request, res: Response) => {
 
         await prisma.notification.create({
             data: {
-                title: `you sold a recipe to ${user.name}`,
+                title: `${user.name} buy your recipe!`,
                 subtitle: '',
                 description: 'check your earnings in your wallet',
                 type: "SELL",

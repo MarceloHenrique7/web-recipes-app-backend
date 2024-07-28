@@ -9,7 +9,7 @@ export const deleteMyRecipe = async (req: Request, res: Response) => {
         
         const recipeId = req.params?._id;
 
-        const existingRecipe = await prisma.recipe.findUnique({ where: { id: recipeId }, include: { user: true } })
+        const existingRecipe = await prisma.recipe.findUnique({ where: { id: recipeId } })
 
         if ( !existingRecipe ) {
             return res.status(StatusCodes.NOT_FOUND).json({ message: "recipe not found" })
