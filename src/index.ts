@@ -18,6 +18,7 @@ dotenv.config();
 import { PrismaClient } from '@prisma/client';
 const app = express();
 
+export const prisma = new PrismaClient();
 const corsOptions = {
     origin: '*',
     credentials: true,
@@ -45,7 +46,6 @@ app.use("/admin/api", myRecipeAdminRoute)
 // Route for admin handle with notifications
 app.use("/api", myNotificationsRoute)
 
-export const prisma = new PrismaClient();
 
 const PORT = 8080;
 const CONNECT_URL_STRING = process.env.CONNECT_URL_STRING
