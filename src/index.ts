@@ -3,7 +3,7 @@ import express, { Request, Response } from 'express';
 
 import myUserAdminRoute from './routes/AdminUserRoute'
 import myRecipeAdminRoute from './routes/AdminRecipeRoute'
-import myNotificationsRoute from './routes/NotificationRoute'
+import NotificationsRoute from './routes/NotificationRoute'
 import bodyParser from 'body-parser';
 
 import myUserRoute from './routes/MyUserRoute'
@@ -44,7 +44,7 @@ app.use("/admin/api", myUserAdminRoute)
 // Route for admin handle with recipes
 app.use("/admin/api", myRecipeAdminRoute)
 // Route for admin handle with notifications
-app.use("/api", myNotificationsRoute)
+app.use("/api", NotificationsRoute)
 
 
 const PORT = 8080;
