@@ -1,4 +1,11 @@
 import express, { Request, Response } from 'express';
+
+
+import myUserAdminRoute from './routes/AdminUserRoute'
+import myRecipeAdminRoute from './routes/AdminRecipeRoute'
+import myNotificationsRoute from './routes/NotificationRoute'
+import bodyParser from 'body-parser';
+
 import myUserRoute from './routes/MyUserRoute'
 import myRecipeRoute from './routes/MyRecipeRoute'
 import RecipeRoute from './routes/RecipeRoute'
@@ -6,7 +13,6 @@ import TransactionRoute from './routes/TransactionRoute'
 import cors from 'cors'
 import mongoose from 'mongoose';
 import { v2 as cloudinary } from 'cloudinary';
-import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 dotenv.config();
 import { PrismaClient } from '@prisma/client';
@@ -15,19 +21,29 @@ const app = express();
 const corsOptions = {
     origin: '*',
     credentials: true,
+    exposedHeaders: ['Content-Range'], 
     optionSuccessStatus: 200,
 }
 
+app.use(bodyParser.json({ limit: '10mb' })); // Ajuste o limite conforme necessário
+app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
+ 
 app.use(cors(corsOptions))
-
-app.use(bodyParser.raw({ type: 'application/json' }));
 app.use(express.json())
 
 app.use("/", RecipeRoute)
 app.use("/api/recipe/search", RecipeRoute)
 app.use("/api/my/user", myUserRoute)
 app.use("/api/my/recipe", myRecipeRoute)
+app.use("/api/my/transaction", TransactionRoute)
 app.use("/api/transaction", TransactionRoute)
+
+// Route for admin handle with users
+app.use("/admin/api", myUserAdminRoute)
+// Route for admin handle with recipes
+app.use("/admin/api", myRecipeAdminRoute)
+// Route for admin handle with notifications
+app.use("/api", myNotificationsRoute)
 
 export const prisma = new PrismaClient();
 

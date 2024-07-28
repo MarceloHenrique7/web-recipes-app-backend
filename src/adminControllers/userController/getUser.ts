@@ -4,22 +4,9 @@ import { prisma } from '../../index';
 
 export const getMyUser = async (req: Request, res: Response) => {
     try {
-        let user;
 
-        if (req.body.authId) {
-            user = await prisma.user.findUnique({
-                where: { auth0Id: req.body.authId },
-                include: { wallet: true}
-            });
-
-            if (user) {
-                return res.status(StatusCodes.OK).json(user);
-            }
-            return res.status(StatusCodes.NOT_FOUND).json({ message: "Unable to Get a user" });
-        }
-
-        user = await prisma.user.findUnique({
-            where: { id: req.body.userId },
+        const user = await prisma.user.findUnique({
+            where: { id: req.params.id },
             include: { wallet: true }
         });
 

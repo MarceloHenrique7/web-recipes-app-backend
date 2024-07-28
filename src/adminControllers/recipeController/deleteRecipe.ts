@@ -6,8 +6,7 @@ import { prisma } from "../../index";
 export const deleteMyRecipe = async (req: Request, res: Response) => {
     
     try {
-        
-        const recipeId = req.params?._id;
+        const recipeId = req.params.id;
 
         const existingRecipe = await prisma.recipe.findUnique({ where: { id: recipeId }, include: { user: true } })
 
@@ -15,9 +14,6 @@ export const deleteMyRecipe = async (req: Request, res: Response) => {
             return res.status(StatusCodes.NOT_FOUND).json({ message: "recipe not found" })
         }
 
-        if ( req.body.userId !== existingRecipe.userId ) {
-            return res.status(StatusCodes.BAD_REQUEST).json({ message: "This recipe doesn't belong to you" })
-        }
 
         await prisma.recipe.delete({ where: { id: recipeId } })
          

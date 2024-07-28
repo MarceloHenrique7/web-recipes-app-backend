@@ -30,7 +30,6 @@ export const jwtParse = async (req: Request, res: Response, next: NextFunction) 
     }
 
     try {
-
         console.log("executando o auth middlware")
         const decoded = jwt.decode(token) as jwt.JwtPayload
         const auth0Id = decoded.sub
@@ -46,4 +45,12 @@ export const jwtParse = async (req: Request, res: Response, next: NextFunction) 
         console.log(error)
         return res.sendStatus(StatusCodes.UNAUTHORIZED)
     }
+}
+
+
+
+const isAdminUser = async (req: Request, res: Response) => {
+
+    
+
 }

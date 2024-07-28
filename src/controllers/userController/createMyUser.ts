@@ -21,11 +21,13 @@ export const createUserValidation = validation(getSchema =>({
 }));
 
 export const createMyUser = async (req: Request<{}, {}, User>, res: Response) => {
-    try {
+    try {   
+
+        
         const UserId = req.body.auth0Id
 
         const existingUser = await prisma.user.findUnique({ where: {auth0Id: UserId} })
-
+        
         if (existingUser) {
             return res.status(StatusCodes.OK).send()
         }

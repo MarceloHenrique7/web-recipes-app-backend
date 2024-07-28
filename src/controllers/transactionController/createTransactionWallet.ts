@@ -3,21 +3,10 @@ import { StatusCodes } from "http-status-codes";
 import { prisma } from "../../index";
 
 
-
-
 export const createTransationWallet = async (req: Request, res: Response) => {
     try {
-        
-        const {
-            userId,
-            recipeId,
-            status,
-            method,
-            amount,
-            currency,
-            transactionType
-        } = req.body;
-
+    
+        const { userId, recipeId, amount, currency, method, transactionType } = req.body;
 
         const user = await prisma.user.findUnique({ where: { id: userId }, include: { wallet: true, recipes: true } })
         if (!user) {
@@ -35,6 +24,13 @@ export const createTransationWallet = async (req: Request, res: Response) => {
         if (!recipe) {
             return res.status(StatusCodes.NOT_FOUND).json({ message: "Recipe not Found" })
             // verificar se a recipe que esta sendo comprada existe
+        }
+
+        const userBuyer = await prisma.user.findUnique({ where: { id: recipe?.userId } })
+        const currentWalletUserBuyer = await prisma.wallet.findUnique({ where: { id: userBuyer?.walletId as string } })
+        if (!userBuyer || !currentWalletUserBuyer) {
+            return res.status(StatusCodes.NOT_FOUND).json({ message: "User not Found" })
+            // para verificar se o user comprador existe
         }
 
 
@@ -64,6 +60,24 @@ export const createTransationWallet = async (req: Request, res: Response) => {
             }
         })
 
+
+
+        await prisma.notification.create({
+            data: {
+                title: `you sold a recipe to ${user.name}`,
+                subtitle: '',
+                description: 'check your earnings in your wallet',
+                type: "SELL",
+                isGeneral: false,
+                isRead: false,
+                readByUsers: [],
+                recipeId: recipe.id,
+                recipientUserId: recipe.userId,
+                userId: user.id
+            }
+        })
+
+
         await prisma.user.update({
             where: {
                 id: userId
@@ -72,6 +86,32 @@ export const createTransationWallet = async (req: Request, res: Response) => {
                 wallet: {
                     update: {
                         balance: balanceUpdate
+                    }
+                }
+            }
+        })
+
+        await prisma.transaction.create({
+            data: {
+                userId: recipe.userId,
+                recipeId: recipeId,
+                amount: amount,
+                currency: currency,
+                method: method,
+                status: "success",
+                transactionType: "SALE"
+            }
+        })
+
+
+        await prisma.user.update({
+            where: {
+                id: userBuyer.id
+            },
+            data: {
+                wallet: {
+                    update: {
+                        balance: currentWalletUserBuyer?.balance + transaction.amount
                     }
                 }
             }

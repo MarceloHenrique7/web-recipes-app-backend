@@ -9,43 +9,41 @@ import { Prisma } from "@prisma/client";
 
 export const createMyRecipeValidator = validation(getSchema => ({
     body: getSchema(yup.object().shape({
-        name: yup.string().min(3).optional(), 
-        description: yup.string().min(3),
-        prepTime: yup.number(),
-        cookTime: yup.number(),
-        serving: yup.number(),
-        imageUrl: yup.string(),
-        categories: yup.array().of(yup.string()),
-        isPublic: yup.string().optional(),
-        forSale: yup.string().optional(),
-        price: yup.number(),
+        userId: yup.string().optional(),
+        name: yup.string().min(3).optional(),
+        description: yup.string().min(3).optional(),
+        prepTime: yup.number().optional(),
+        cookTime: yup.number().optional(),
+        serving: yup.number().optional(),
+        imageUrl: yup.string().optional(),
+        categories: yup.array().of(yup.string()).optional(),
+        isPublic: yup.boolean().optional(),
+        forSale: yup.boolean().optional(),
+        price: yup.number().optional(),
         nutrients: yup.array().of(yup.object({
-            calories: yup.number(),
-            fat: yup.number(),
-            protein: yup.number(),
-            carbohydrate: yup.number(),
-        })),
+            calories: yup.number().optional(),
+            fat: yup.number().optional(),
+            protein: yup.number().optional(),
+            carbohydrate: yup.number().optional(),
+        })).optional(),
         ingredients: yup.array().of(yup.object({
-            name: yup.string(),
-            quantity: yup.number(),
-            unit: yup.string(),
-        })),
+            name: yup.string().optional(),
+            quantity: yup.number().optional(),
+            unit: yup.string().optional(),
+        })).optional(),
         instructions: yup.array().of(yup.object({
-            title: yup.string(),
-            subtitle: yup.string(),
-            description: yup.string(),
-        })),
+            title: yup.string().optional(),
+            subtitle: yup.string().optional(),
+            description: yup.string().optional(),
+        })).optional(),
     })),
 }));
 
-
-
-
 export const createMyRecipe = async (req: Request, res: Response) => {
     try {
-        const imageUrl = req.file ? await uploadImage(req.file as Express.Multer.File) : null;
-
+        const imageUrl = req.body.imageFile ? await uploadImage(req.body.imageFile) : null;
         const {
+            userId,
             name,
             description,
             prepTime,
@@ -55,18 +53,17 @@ export const createMyRecipe = async (req: Request, res: Response) => {
             nutrients,
             ingredients,
             instructions,
-            userId,
-            forSale,
             isPublic,
+            forSale,
             price
         } = req.body;
-        
-        const parsedNutrients = JSON.parse(JSON.stringify(nutrients))
-        const parsedIngredients = JSON.parse(JSON.stringify(ingredients))
-        const parsedInsctructions = JSON.parse(JSON.stringify(instructions))
-        const forSaleBool = forSale.toLowerCase() == 'true'
-        const isPublicBool = isPublic.toLowerCase() == 'true'
 
+        const parsedNutrients = JSON.parse(JSON.stringify(nutrients));
+        const parsedIngredients = JSON.parse(JSON.stringify(ingredients));
+        const parsedInstructions = JSON.parse(JSON.stringify(instructions));
+
+        const forSaleBool = typeof forSale === 'string' ? forSale.toLowerCase() === 'true' : forSale;
+        const isPublicBool = typeof isPublic === 'string' ? isPublic.toLowerCase() === 'true' : isPublic;
 
         const newRecipe: Prisma.RecipeUncheckedCreateInput = {
             name,
@@ -81,34 +78,35 @@ export const createMyRecipe = async (req: Request, res: Response) => {
                     fat: parseFloat(nutrient.fat),
                     protein: parseFloat(nutrient.protein),
                     carbohydrate: parseFloat(nutrient.carbohydrate),
-                    
-                }))
+                })),
             },
             ingredients: {
                 create: parsedIngredients.map((ingredient: any) => ({
                     name: ingredient.name,
                     quantity: parseFloat(ingredient.quantity),
                     unit: ingredient.unit,
-                }))
+                })),
             },
             instructions: {
-                create: parsedInsctructions.map((instruction: any) => ({
+                create: parsedInstructions.map((instruction: any) => ({
                     title: instruction.title,
                     subtitle: instruction.subtitle,
-                    description: instruction.description
-                }))
+                    description: instruction.description,
+                })),
             },
             imageUrl: imageUrl as string,
-            userId: new mongoose.Types.ObjectId(userId).toString(),
+            userId: userId,
             lastUpdate: new Date(),
-            isPublic: isPublicBool || false,
-            forSale: forSaleBool || false,
+            isPublic: isPublicBool,
+            forSale: forSaleBool,
             price: parseFloat(price) || 0.0,
-        }
+        };
 
-        
         const recipe = await prisma.recipe.create({
             data: newRecipe,
+            include: {
+                user: true,
+            },
         });
 
         res.status(StatusCodes.CREATED).send(recipe);
@@ -120,10 +118,7 @@ export const createMyRecipe = async (req: Request, res: Response) => {
     }
 };
 
-const uploadImage = async (file: Express.Multer.File) => {
-    const image = file
-    const base64Image = Buffer.from(image.buffer).toString("base64");
-    const dataURI = `data:${image.mimetype};base64,${base64Image}`;
-    const uploadResponse = await cloudinary.v2.uploader.upload(dataURI);
-    return uploadResponse.url
-}
+const uploadImage = async (file: any) => {
+    const uploadResponse = await cloudinary.v2.uploader.upload(file);
+    return uploadResponse.url;
+};

@@ -26,8 +26,6 @@ export const getMyTransaction = async (req: Request, res: Response) => {
         console.log(error)
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error })
     }
-
-
 }
 
 type CheckoutSessionRequest = {
@@ -52,30 +50,6 @@ const stripeWebHookHandler = async (req: Request, res: Response) => {
             console.log(error)
             return res.status(400).send(`Webhook erro: ${error.message}` )
         }
-
-        if (event.type === "checkout.session.completed") {
-            const session = event.data.object as Stripe.Checkout.Session;
-            
-            const recipeId = event.data.object.metadata?.recipeId;
-            if (!recipeId) {
-                console.log("Nao foi possivel obter o recipeId")
-                return res.status(StatusCodes.BAD_REQUEST).json({ message: "RecipeId not found in metadata" });
-            }
-
-            const transaction = await prisma.transaction.findFirst({ where:  {recipeId: recipeId} })
-            if (!transaction) {
-                return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "Transaction not Found" })
-            }
-    
-            await prisma.transaction.update({
-                where: { id: transaction.id },
-                data: {
-                    amount: session.amount_total as number,
-                    status: "paid"
-                }
-            })
-    
-        }
     
         res.status(StatusCodes.OK).send()
     }
@@ -86,36 +60,66 @@ const stripeWebHookHandler = async (req: Request, res: Response) => {
 const createCheckoutSession = async (req: Request, res: Response) => {
 
     try {
-        const checkoutSessionRequest: Buffer = req.body;
+        const checkoutSessionRequest = req.body;
 
-        const checkoutSessionRequestString = checkoutSessionRequest.toString('utf8')
-
-        const checkoutSessionRequestJson = JSON.parse(checkoutSessionRequestString)
-        
-        console.log(checkoutSessionRequestJson)
+        console.log(checkoutSessionRequest)
 
 
-        const recipe = await prisma.recipe.findUnique({ where: { id: checkoutSessionRequestJson?.recipeId } })
+        const recipe = await prisma.recipe.findUnique({ where: { id: checkoutSessionRequest?.recipeId } })
 
         if (!recipe) {
             throw new Error('Recipe not Found')
         }
+        const userBuyer = await prisma.user.findUnique({ where: { id: req.body.userId } })
 
+        if (!userBuyer) {
+            return res.status(StatusCodes.NOT_FOUND).json( { message: "User not Found" } )
+        }
 
 
         const transaction = await prisma.transaction.create({
             data: {
-                userId: req.body.userId,
+                userId: userBuyer.id,
                 recipeId: recipe.id,
-                amount: checkoutSessionRequestJson.amount,
-                method: checkoutSessionRequestJson.method,
+                amount: checkoutSessionRequest.amount,
+                method: checkoutSessionRequest.method,
                 status: "success",
                 currency: "usd",
                 transactionType: "PURCHASE"
             }
         })
 
-        const session = await createSession(checkoutSessionRequestJson, recipe.id, transaction.id)
+
+
+        await prisma.transaction.create({
+            data: {
+                userId: recipe.userId,
+                recipeId: recipe.id,
+                amount: checkoutSessionRequest.amount,
+                method: checkoutSessionRequest.method,
+                status: "success",
+                currency: "usd",
+                transactionType: "SALE"
+            }
+        })
+        
+        await prisma.notification.create({
+            data: {
+                title: `${userBuyer.name} buy your recipe!`,
+                subtitle: '',
+                description: 'check your earnings in your wallet',
+                type: "SELL",
+                isGeneral: false,
+                isRead: false,
+                readByUsers: [],
+                recipeId: recipe.id,
+                recipientUserId: recipe.userId,
+                userId: userBuyer.id
+            }
+        })
+
+        console.log("createCheckoutSession ---->>>" + recipe.id, transaction.id)
+        const session = await createSession(checkoutSessionRequest, recipe.id, transaction.id)
 
         if (!session) {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json( { message: "Error creating stripe section" } )
@@ -132,6 +136,11 @@ const createCheckoutSession = async (req: Request, res: Response) => {
 
 
 const createSession = async (checkoutSessionRequest: CheckoutSessionRequest, recipeId: string, transactionId: string, ) => {
+    
+    if (!recipeId || !transactionId) {
+        throw new Error("Recipe ID and Transaction ID must be provided");
+    }
+    
     const recipe = await prisma.recipe.findUnique({ where: { id: recipeId } })
 
     console.log("Passando para o metadata", recipeId, transactionId)
@@ -170,8 +179,8 @@ const createSession = async (checkoutSessionRequest: CheckoutSessionRequest, rec
         ],
         mode: "payment",
         metadata: {
-            recipeId,
-            transactionId
+            recipeId: recipeId,
+            transactionId: transactionId
         },
         success_url: `${FRONTEND_URL}/transaction-status/${recipe.id}?success=true`,
         cancel_url: `${FRONTEND_URL}/details/${recipeId}?cancel=true`

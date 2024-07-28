@@ -4,6 +4,7 @@ import { myUserController } from "../controllers/userController";
 
 const router = Router();
 
+router.get("/all", jwtCheck, jwtParse, myUserController.getAllUsers)
 router.get("/", jwtCheck, jwtParse, myUserController.getMyUser)
 router.post("/", myUserController.createUserValidation , myUserController.createMyUser)
 router.put("/", jwtCheck, jwtParse, myUserController.updateCurrentUser)

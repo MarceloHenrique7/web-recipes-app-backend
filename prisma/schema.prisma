@@ -55,22 +55,49 @@ model Recipe {
   instructions Instruction[]
   ingredients  Ingredient[]
   userId       String        @db.ObjectId
-  User         User          @relation(fields: [userId], references: [id])
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
   Transaction  Transaction[]
-  isPublic     Boolean?      
-  forSale      Boolean?       
+  isPublic     Boolean?
+  forSale      Boolean?
   price        Float?
 }
 
+model Notification {
+  id              String           @id @default(auto()) @map("_id") @db.ObjectId
+  title           String
+  subtitle        String
+  description     String
+  recipientUserId String?          @db.ObjectId // Opcional para notificações gerais
+  recipeId        String?          @db.ObjectId
+  type            NotificationType
+  userId          String           @db.ObjectId
+  user            User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isGeneral       Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  isRead          Boolean          @default(false)
+  readByUsers     String[]         @default([])
+
+  @@index([recipientUserId])
+  @@index([userId])
+}
+
+enum NotificationType {
+  SAVE
+  SELL
+  GENERAL
+}
+
 model User {
-  id           String        @id @default(auto()) @map("_id") @db.ObjectId
-  auth0Id      String        @unique
-  email        String        @unique
-  name         String?
-  recipes      Recipe[]
-  transactions Transaction[]
-  wallet       Wallet?       @relation(fields: [walletId], references: [id])
-  walletId     String?       @db.ObjectId
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  auth0Id       String         @unique
+  email         String         @unique
+  name          String?
+  recipes       Recipe[]
+  transactions  Transaction[]
+  wallet        Wallet?        @relation(fields: [walletId], references: [id])
+  walletId      String?        @db.ObjectId
+  notifications Notification[]
+  savedRecipes  String[]
 }
 
 model Wallet {
@@ -83,7 +110,7 @@ model Wallet {
 model Transaction {
   id              String          @id @default(auto()) @map("_id") @db.ObjectId
   userId          String          @db.ObjectId
-  user            User            @relation(fields: [userId], references: [id])
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   recipeId        String?         @db.ObjectId
   recipe          Recipe?         @relation(fields: [recipeId], references: [id])
   status          String
