@@ -1,32 +1,26 @@
-import Stripe from "stripe" // importamos o stripe que instalamos
+import Stripe from "stripe";
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { prisma } from "../../index";
 
-const STRIPE = new Stripe(process.env.STRIPE_API_KEY as string);
 
-const FRONTEND_URL = process.env.FRONTEND_URL as string
-
-const STRIPE_ENDPOINT_SECRET = process.env.STRIPE_WEBHOOK_SECRET as string
-
-
+const FRONTEND_URL = process.env.FRONTEND_URL as string;
+const STRIPE_ENDPOINT_SECRET = process.env.STRIPE_WEBHOOK_SECRET as string;
+const STRIPE_API_KEY = process.env.STRIPE_API_KEY as string;
+const stripe = new Stripe(STRIPE_API_KEY);
 
 export const getMyTransaction = async (req: Request, res: Response) => {
-
     try {
-        
-        const transactions = await prisma.transaction.findMany({ where: { userId: req.body.userId } })
+        const transactions = await prisma.transaction.findMany({ where: { userId: req.body.userId } });
         if (!transactions) {
-            return res.status(StatusCodes.NOT_FOUND).json({ message: "No transactions found" })
+            return res.status(StatusCodes.NOT_FOUND).json({ message: "No transactions found" });
         }
-
-        res.status(StatusCodes.OK).json(transactions)
-
+        res.status(StatusCodes.OK).json(transactions);
     } catch (error) {
-        console.log(error)
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error })
+        console.log(error);
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error });
     }
-}
+};
 
 type CheckoutSessionRequest = {
     transactionType: string;
@@ -34,48 +28,119 @@ type CheckoutSessionRequest = {
     method: string;
     amount: number;
     userId: string;
-    recipeId: string
-}
+    recipeId: string;
+};
 
 const stripeWebHookHandler = async (req: Request, res: Response) => {
     let event;
-
+    console.log("endpoint secret ---------->>>>");
     if (STRIPE_ENDPOINT_SECRET) {
         try {
             const sig = req.headers["stripe-signature"] as string;
-            
-            event = STRIPE.webhooks.constructEvent(req.body, sig, STRIPE_ENDPOINT_SECRET)
-    
+            event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_ENDPOINT_SECRET);
         } catch (error: any) {
-            console.log(error)
-            return res.status(400).send(`Webhook erro: ${error.message}` )
+            console.log(error);
+            return res.status(400).send(`Webhook erro: ${error.message}`);
         }
+
+        if (event.type === 'checkout.session.completed') {
+            console.log("O 'checkout.session.completed'");
+
+            const session = event.data.object as Stripe.Checkout.Session;
+            const metadata = session.metadata;
+            console.log("Metadata: ", metadata);
+            
+            const recipe = await prisma.recipe.findUnique({
+                where: { id: metadata?.recipeId }
+            })
+            const transaction = await prisma.transaction.findUnique({
+                where: { id: metadata?.transactionId }
+            })
+
+            if (!recipe) {
+                return res.status(StatusCodes.BAD_REQUEST).json({
+                    message: "Recipe not found"
+                })
+            }
+            if (!transaction) {
+                return res.status(StatusCodes.BAD_REQUEST).json({
+                    message: "Transaction not found"
+                })
+            }
+            const userBuyer = await prisma.user.findUnique({
+                where: { id: transaction.userId }
+            })
+
+            await prisma.transaction.create({
+                data: {
+                    userId: recipe.userId,
+                    recipeId: recipe.id,
+                    amount: transaction.amount,
+                    method: transaction.method,
+                    status: "success",
+                    currency: "usd",
+                    transactionType: "SALE"
+                }
+            });
     
-        res.status(StatusCodes.OK).send()
+            await prisma.notification.create({
+                data: {
+                    title: `${userBuyer?.name} buy your recipe!`,
+                    subtitle: '',
+                    description: 'check your earnings in your wallet',
+                    type: "SELL",
+                    isGeneral: false,
+                    isRead: false,
+                    readByUsers: [],
+                    recipeId: recipe.id,
+                    recipientUserId: recipe.userId,
+                    userId: userBuyer?.id as string
+                }
+            });
+    
+            const balanceOwnerOfRecipe = await prisma.wallet.findUnique({
+                where: { userId: recipe.userId }
+            });
+    
+            if (!balanceOwnerOfRecipe) {
+                return res.status(StatusCodes.NOT_FOUND).json({
+                    message: "User balance not found"
+                });
+            }
+    
+            await prisma.user.update({
+                where: { id: recipe.userId },
+                data: {
+                    wallet: {
+                        update: {
+                            balance: balanceOwnerOfRecipe?.balance + transaction.amount
+                        }
+                    }
+                }
+            });
+    
+            
+        }
+        console.log(`Unhandled event type ${event.type}`);
+
+        res.status(StatusCodes.OK).send();
     }
-
-
-}
+};
 
 const createCheckoutSession = async (req: Request, res: Response) => {
-
     try {
         const checkoutSessionRequest = req.body;
 
-        console.log(checkoutSessionRequest)
-
-
-        const recipe = await prisma.recipe.findUnique({ where: { id: checkoutSessionRequest?.recipeId } })
+        const recipe = await prisma.recipe.findUnique({ where: { id: checkoutSessionRequest?.recipeId } });
 
         if (!recipe) {
-            throw new Error('Recipe not Found')
+            throw new Error('Recipe not Found');
         }
-        const userBuyer = await prisma.user.findUnique({ where: { id: req.body.userId } })
+        const userBuyer = await prisma.user.findUnique({ where: { id: req.body.userId } });
 
         if (!userBuyer) {
-            return res.status(StatusCodes.NOT_FOUND).json( { message: "User not Found" } )
+            return res.status(StatusCodes.NOT_FOUND).json({ message: "User not Found" });
         }
-
 
         const transaction = await prisma.transaction.create({
             data: {
@@ -87,71 +152,39 @@ const createCheckoutSession = async (req: Request, res: Response) => {
                 currency: "usd",
                 transactionType: "PURCHASE"
             }
-        })
+        });
 
-
-
-        await prisma.transaction.create({
-            data: {
-                userId: recipe.userId,
-                recipeId: recipe.id,
-                amount: checkoutSessionRequest.amount,
-                method: checkoutSessionRequest.method,
-                status: "success",
-                currency: "usd",
-                transactionType: "SALE"
-            }
-        })
-        
-        await prisma.notification.create({
-            data: {
-                title: `${userBuyer.name} buy your recipe!`,
-                subtitle: '',
-                description: 'check your earnings in your wallet',
-                type: "SELL",
-                isGeneral: false,
-                isRead: false,
-                readByUsers: [],
-                recipeId: recipe.id,
-                recipientUserId: recipe.userId,
-                userId: userBuyer.id
-            }
-        })
-
-        const session = await createSession(checkoutSessionRequest, recipe.id, transaction.id)
+        const session = await createSession(checkoutSessionRequest, recipe.id, transaction.id);
 
         if (!session) {
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json( { message: "Error creating stripe section" } )
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "Error creating stripe session" });
         }
 
-        res.json({ url: session.url })
+       
+        res.json({ url: session.url });
 
     } catch (error: any) {
-        console.log(error)
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({message: error} )
+        console.log(error);
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error });
     }
+};
 
-}
-
-
-const createSession = async (checkoutSessionRequest: CheckoutSessionRequest, recipeId: string, transactionId: string, ) => {
-    
+const createSession = async (checkoutSessionRequest: CheckoutSessionRequest, recipeId: string, transactionId: string) => {
     if (!recipeId || !transactionId) {
         throw new Error("Recipe ID and Transaction ID must be provided");
     }
-    
-    const recipe = await prisma.recipe.findUnique({ where: { id: recipeId } })
 
-    console.log("Passando para o metadata", recipeId, transactionId)
+    const recipe = await prisma.recipe.findUnique({ where: { id: recipeId } });
+
+    console.log("Passando para o metadata", recipeId, transactionId);
 
     if (!recipe) {
-        throw new Error("Recipe not found")
+        throw new Error("Recipe not found");
     }
 
-    const amountParsed = checkoutSessionRequest.amount * 100
+    const amountParsed = checkoutSessionRequest.amount * 100;
 
-    const sessionData = await STRIPE.checkout.sessions.create({
-
+    const sessionData = await stripe.checkout.sessions.create({
         line_items: [
             {
                 price_data: {
@@ -183,13 +216,12 @@ const createSession = async (checkoutSessionRequest: CheckoutSessionRequest, rec
         },
         success_url: `${FRONTEND_URL}/transaction-status/${recipe.id}?success=true`,
         cancel_url: `${FRONTEND_URL}/details/${recipeId}?cancel=true`
-    })
+    });
     return sessionData;
-}
-
+};
 
 export default {
     stripeWebHookHandler,
     createCheckoutSession,
     getMyTransaction
-}
+};
