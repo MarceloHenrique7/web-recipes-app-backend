@@ -13,7 +13,7 @@ export const getTransactionsWallet = async (req: Request, res: Response) => {
         const { userId } = req.body;
 
         console.log(userId)
-        const transactions = await prisma.transaction.findMany({ where: {userId: userId} })
+        const transactions = await prisma.transaction.findMany({ where: {userId: userId}, orderBy: { createdAt: 'desc' } })
 
         console.log(transactions)
 

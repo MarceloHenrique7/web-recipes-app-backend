@@ -3,7 +3,7 @@ import { Router } from "express";
 
 import { jwtCheck, jwtParse } from "../middleware/auth";
 import { createTransationWallet } from "../controllers/transactionController/createTransactionWallet";
-import { getTransactionsWallet } from "../controllers/transactionController/getTransactionsWallet";
+import { getTransactionsWallet } from "../controllers/transactionController/getTransactions";
 import stripeController from "../controllers/transactionController/stripeController";
 
 

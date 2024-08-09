@@ -13,7 +13,6 @@ const upload = multer({
     }
 })
 
-
 router.get('/',
     jwtCheck,
     jwtParse,

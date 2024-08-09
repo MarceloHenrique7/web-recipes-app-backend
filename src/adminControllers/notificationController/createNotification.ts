@@ -4,7 +4,11 @@ import { prisma } from "../../index"
 
 export const createNotification = async (req: Request, res: Response) => {
     try {
-        const { userId, recipientUserId, recipeId, type, subtitle, description } = req.body
+        const { userId, recipientUserId, recipeId, type, } = req.body
+
+        // Em nossa aplicação permitimos que o user salve sua propia receita mas não queremos criar uma notificação para ele mesmo, então verificamos se o id do user que criou a notificação (salvou a receita), verificamos se não é igual ao do user que vai ser enviada a notificação, se for igual retornamos OK.
+        if (userId === recipientUserId) return res.status(StatusCodes.OK).send()
+
         const userToSave = await prisma.user.findUnique( { where: { id: userId }  } )
         const userSendNotification = await prisma.user.findUnique( { where: { id: recipientUserId }  } )
         const recipeSaved = await prisma.recipe.findUnique( { where: { id: recipeId }  } )
@@ -23,8 +27,8 @@ export const createNotification = async (req: Request, res: Response) => {
             })
             return res.status(StatusCodes.CREATED).json(notification)
         }
-        if ( type === 'SAVE' ) {
 
+        if ( type === 'SAVE' ) {
             const notification = await prisma.notification.create({
                 data: req.body
             })

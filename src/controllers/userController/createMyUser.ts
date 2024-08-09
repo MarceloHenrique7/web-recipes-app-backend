@@ -33,7 +33,10 @@ export const createMyUser = async (req: Request<{}, {}, User>, res: Response) =>
         }
 
         const newUser = await prisma.user.create({
-            data: req.body
+            data: {
+                ...req.body,
+                savedRecipes: []
+            }
         })
         
         

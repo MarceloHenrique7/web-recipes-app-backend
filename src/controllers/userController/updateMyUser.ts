@@ -39,7 +39,7 @@ export const updateCurrentUser = async (req: Request, res: Response) => {
         data: {
             name: name
         }})
-        res.send(user)
+        return res.status(StatusCodes.NO_CONTENT).send(user)
     } catch (error) {
         console.log(error)
         res.status(500).json({ message: "Unable to update a user" })

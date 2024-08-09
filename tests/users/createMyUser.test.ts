@@ -21,7 +21,7 @@ describe('User - Create', () => {
         expect(result.statusCode).toEqual(StatusCodes.BAD_REQUEST)
         expect(typeof result.body).toEqual('object')
         expect(result.body).toHaveProperty('errors.body.auth0Id')
-    })
+    });
 
     it('Create a new user without EMAIL', async () => {
         const result = await testServer
@@ -32,7 +32,7 @@ describe('User - Create', () => {
         expect(result.statusCode).toEqual(StatusCodes.BAD_REQUEST)
         expect(typeof result.body).toEqual('object')
         expect(result.body).toHaveProperty('errors.body.email')
-    })
+    });
 
     it('Create a new user without NAME', async () => {
         const result = await testServer
@@ -43,7 +43,7 @@ describe('User - Create', () => {
         expect(result.statusCode).toEqual(StatusCodes.BAD_REQUEST)
         expect(typeof result.body).toEqual('object')
         expect(result.body).toHaveProperty('errors.body.name')
-    })
+    });
 
     it('Create a new user without NAME', async () => {
         const result = await testServer
@@ -54,7 +54,7 @@ describe('User - Create', () => {
         expect(result.statusCode).toEqual(StatusCodes.BAD_REQUEST)
         expect(typeof result.body).toEqual('object')
         expect(result.body).toHaveProperty('errors.body.name')
-    })
+    });
 
         it('Create a new USER with EMAIL wrong', async () => {
         const result = await testServer
@@ -64,7 +64,6 @@ describe('User - Create', () => {
         expect(result.statusCode).toEqual(StatusCodes.BAD_REQUEST)
         expect(typeof result.body).toEqual("object")
         expect(result.body).toHaveProperty('errors.body.email')
-
-    })
+    });
 
 })

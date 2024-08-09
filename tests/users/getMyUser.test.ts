@@ -16,6 +16,7 @@ describe('User - Get', () => {
     it('Get My User without Authorization', async () => {
         const res = await testServer
         .get('/api/my/user')
+        .set({Authorization: `Bearer ${accessToken}`})
         .send()
 
         expect(res.statusCode).toEqual(StatusCodes.UNAUTHORIZED);

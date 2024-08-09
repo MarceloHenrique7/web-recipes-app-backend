@@ -17,6 +17,7 @@ import { prisma } from '../index';
 export const jwtParse = async (req: Request, res: Response, next: NextFunction) => {
     const { authorization } = req.headers;
     if(!authorization || !authorization.startsWith("Bearer")) {
+        console.log("Caiu no if !authorization !authorization.startsWith")
         return res.sendStatus(StatusCodes.UNAUTHORIZED).json({ message: "Unathorized" })
     }
 
@@ -25,7 +26,7 @@ export const jwtParse = async (req: Request, res: Response, next: NextFunction) 
     const token = authorization.split(' ')[1];
 
     if (token === accessTokenTest) {
-        req.body.authId = 'id_test'
+        req.body.authId = 'id_of_test'
         return next()
     }
 

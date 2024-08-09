@@ -43,7 +43,7 @@ app.use("/admin/api", myUserAdminRoute);
 // Route for admin handle with recipes
 app.use("/admin/api", myRecipeAdminRoute);
 // Route for admin handle with notifications
-app.use("/api", NotificationsRoute);
+app.use("/api/notification", NotificationsRoute);
 
 const PORT = 8080;
 const CONNECT_URL_STRING = process.env.CONNECT_URL_STRING;

@@ -7,7 +7,6 @@ import { prisma } from '../../index';
 export const getMyRecipe = async (req: Request, res: Response) => {
 
     try {
-        console.log(req.params)
         const recipe = await prisma.recipe.findUnique({
             where: { id: req.params.id },
             include: {
@@ -20,7 +19,6 @@ export const getMyRecipe = async (req: Request, res: Response) => {
         if(!recipe) {
             return res.status(StatusCodes.NOT_FOUND).json({ message: "recipe not found" })
         }
-        console.log(recipe)
 
         res.json(recipe)
     } catch (error) {

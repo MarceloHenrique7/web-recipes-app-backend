@@ -9,7 +9,8 @@ export const searchRecipe = async (req: Request, res: Response) => {
         const searchQuery = req.query.searchQuery as string || recipe || ""
         const selectedCategories = req.query.selectedCategories as string || ""
         const sortOption = req.query.sortOption as string || "lastUpdated"
-
+        console.log(`Name searched ${recipe}`)
+        console.log(`query ${JSON.stringify(req.query)}`)
         console.log(recipe)
         console.log(searchQuery)
         console.log(selectedCategories)
@@ -27,7 +28,7 @@ export const searchRecipe = async (req: Request, res: Response) => {
 
 
         const recipeCheck = await prisma.recipe.count({ where: query})
-
+        console.log("Ta chegando aqui")
         if (recipeCheck === 0) {
             return res.status(StatusCodes.NOT_FOUND).json({
                 data: [],
@@ -39,8 +40,6 @@ export const searchRecipe = async (req: Request, res: Response) => {
             })
         }
 
-        console.log(selectedCategories)
-        
         if(selectedCategories) {
             const categoriesArray = selectedCategories.split(",")
             query.categories = { hasEvery: categoriesArray }

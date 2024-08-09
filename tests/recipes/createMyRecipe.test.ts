@@ -10,7 +10,7 @@ describe('Create - Recipe', () => {
     it('Create a recipe', async () => {
         const res = await testServer
         .post('/api/my/recipe')
-        .set({ Authorization: `Bearer ${accessToken}` })
+        .set({ authorization: `Bearer ${accessToken}`})
         .send(
             { 
                 name: "chicken",
@@ -37,11 +37,13 @@ describe('Create - Recipe', () => {
                     description: "description of instruction"
                 },
                 lastUpdate: new Date(),
-                userId: "id_test"
+                isPublic: false,
+                isForSale: false,
+                price: 0,
             },
         
         )
     expect(res.statusCode).toEqual(StatusCodes.CREATED)
-    })
+    });
 
-})
+});
