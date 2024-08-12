@@ -89,20 +89,30 @@ model Transaction {
   user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   recipeId        String?         @db.ObjectId
   recipe          Recipe?         @relation(fields: [recipeId], references: [id])
+  walletId        String?         @db.ObjectId
+  wallet          Wallet?         @relation(fields: [walletId], references: [id])
+  recipientUserId String?          @db.ObjectId
   status          String
   method          String
   amount          Float
   currency        String
   transactionType TransactionType
+  direction       TransactionDirection?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
+}
+
+enum TransactionDirection {
+  INBOUND   
+  OUTBOUND  
 }
 
 enum TransactionType {
   PURCHASE
   DEPOSIT
-  WITHDRAWAL
+  WITHDRAW
   SALE
+  TRANSFER
 }
 
 model User {
@@ -115,7 +125,7 @@ model User {
   savedRecipes  String[]
   wallet        Wallet?        @relation(fields: [walletId], references: [id])
   walletId      String?        @db.ObjectId
-  notifications Notification[] 
+  notifications Notification[]
 }
 
 model Wallet {
@@ -123,4 +133,5 @@ model Wallet {
   userId  String @unique @db.ObjectId
   balance Float  @default(0.0)
   user    User[]
+  transactions  Transaction[]
 }

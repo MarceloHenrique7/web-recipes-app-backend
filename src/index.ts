@@ -5,6 +5,7 @@ import NotificationsRoute from './routes/NotificationRoute';
 import bodyParser from 'body-parser';
 import myUserRoute from './routes/MyUserRoute';
 import myRecipeRoute from './routes/MyRecipeRoute';
+import myWalletRoute from './routes/MyWalletRoute';
 import RecipeRoute from './routes/RecipeRoute';
 import TransactionRoute from './routes/TransactionRoute';
 import cors from 'cors';
@@ -36,6 +37,7 @@ app.use("/", RecipeRoute);
 app.use("/api/recipe/search", RecipeRoute);
 app.use("/api/my/user", myUserRoute);
 app.use("/api/my/recipe", myRecipeRoute);
+app.use("/api/my/wallet", myWalletRoute);
 app.use("/api/transaction", TransactionRoute);
 
 // Route for admin handle with users
