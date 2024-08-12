@@ -15,7 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "@auth0/auth0-react": "^2.2.4",
-    "@prisma/client": "^5.17.0",
+    "@prisma/client": "^5.18.0",
     "@types/multer": "^1.4.11",
     "@types/stripe": "^8.0.417",
     "axios": "^1.7.2",
