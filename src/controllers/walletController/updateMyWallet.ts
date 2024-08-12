@@ -86,7 +86,7 @@ export const updateMyWallet = async (req: Request, res: Response) => {
                     method: "wallet",
                     transactionType: type,
                     userId: userReceiver?.id,
-                    recipientUserId: userId || '',
+                    recipientUserId: userId || undefined,
                     walletId: wallet.id,
                     direction: "INBOUND"
                 }
@@ -100,7 +100,7 @@ export const updateMyWallet = async (req: Request, res: Response) => {
                     method: "wallet",
                     transactionType: type,
                     userId: userId,
-                    recipientUserId: userReceiver?.id || '',
+                    recipientUserId: userReceiver?.id || undefined,
                     walletId: wallet.id,
                     direction: "OUTBOUND"
                 }
@@ -166,7 +166,7 @@ export const updateMyWallet = async (req: Request, res: Response) => {
                     method: "wallet",
                     transactionType: type,
                     userId: userId,
-                    walletId: wallet?.id
+                    walletId: wallet?.id || undefined
                 }
             })
     
