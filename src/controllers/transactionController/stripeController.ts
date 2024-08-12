@@ -140,9 +140,11 @@ const stripeWebHookHandler = async (req: Request, res: Response) => {
     }
 };
 
+
+
 const createCheckoutSession = async (req: Request, res: Response) => {
     try {
-        const checkoutSessionRequest = req.body;
+        const checkoutSessionRequest: CheckoutSessionRequest = req.body;
 
         const recipe = await prisma.recipe.findUnique({ where: { id: checkoutSessionRequest?.recipeId } });
 
@@ -150,6 +152,9 @@ const createCheckoutSession = async (req: Request, res: Response) => {
             throw new Error('Recipe not Found');
         }
 
+        if (recipe.userId === checkoutSessionRequest.userId) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ message: "You can't buy yourself recipe" })
+        }
 
         const session = await createSession(checkoutSessionRequest, recipe.id, req.body.userId);
         if (!session) {
