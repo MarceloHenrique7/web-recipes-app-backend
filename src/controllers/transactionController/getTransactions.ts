@@ -17,7 +17,7 @@ export const getTransactionsWallet = async (req: Request, res: Response) => {
             userId: userId
         }, orderBy: { createdAt: 'desc' } })
 
-        console.log(transactions)
+
 
         if (!transactions) {
             return res.status(StatusCodes.NOT_FOUND).json({ message: "Transactions not Found" })

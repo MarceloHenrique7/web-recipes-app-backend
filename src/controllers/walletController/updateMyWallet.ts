@@ -147,8 +147,13 @@ export const updateMyWallet = async (req: Request, res: Response) => {
     
             if (type === 'WITHDRAW') {
                 const currentBalance = wallet.balance 
-    
-                console.log("WITHDRAW")
+                
+
+                if (value.value > currentBalance) {
+                    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "Balance is insufficient" })
+                }
+
+                console.log(value.value)
         
                 await prisma.wallet.update({
                     where: { id: wallet?.id },
@@ -176,6 +181,7 @@ export const updateMyWallet = async (req: Request, res: Response) => {
     
             return res.status(StatusCodes.CREATED).json(wallet) 
         }
+
 
     } catch (error) {
         console.log("error", error)

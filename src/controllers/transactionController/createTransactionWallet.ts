@@ -56,7 +56,9 @@ export const createTransationWallet = async (req: Request, res: Response) => {
                 currency: currency,
                 method: method,
                 status: "paid",
-                transactionType: transactionType
+                transactionType: transactionType,
+                direction: "OUTBOUND",
+                recipientUserId: recipe.userId
             }
         })
 
@@ -99,7 +101,9 @@ export const createTransationWallet = async (req: Request, res: Response) => {
                 currency: currency,
                 method: method,
                 status: "success",
-                transactionType: "SALE"
+                transactionType: "SALE",
+                direction: "INBOUND",
+                recipientUserId: recipe.userId
             }
         })
 

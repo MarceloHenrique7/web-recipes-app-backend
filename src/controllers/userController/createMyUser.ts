@@ -43,7 +43,7 @@ export const createMyUser = async (req: Request<{}, {}, User>, res: Response) =>
         const wallet = await prisma.wallet.create({
             data: {
                 userId: newUser.id,
-                balance: 0.0
+                balance: 50.00
             },
         })
 
@@ -54,6 +54,17 @@ export const createMyUser = async (req: Request<{}, {}, User>, res: Response) =>
             }
         });
         
+        await prisma.notification.create({
+            data: {
+                title: 'Thanks, for register!',
+                subtitle: 'Welcome the plataform',
+                description: '🎉You won 50 dollars for spend, Enjoy!🎉',
+                type: "GENERAL",
+                userId: newUser.id,
+                recipientUserId: newUser.id,
+                isGeneral: false,
+            }
+        })
         
 
         res.status(StatusCodes.CREATED).json(updatedUser)
